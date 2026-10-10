@@ -1,12 +1,297 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Aura Motors - Estoque</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Motors - Gestão de Estoque</title>
 </head>
 <body>
-    <h1>Módulo de Estoque (Veículos e Marcas)</h1>
+
+    <h1>Aura Motors</h1>
+    <h2>Gestão de Estoque, Marcas e Montadoras</h2>
     <hr>
-    <p>Área reservada para a gestão de estoque.</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+        <hr>
+    {% endif %}
+
+    <!-- VEICULOS -->
+    <h2>Cadastrar Veículo</h2>
+
+    <form method="POST" action="{% url 'estoque' %}">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="inserir_veiculo">
+
+        <label>Modelo:</label>
+        <input type="text" name="modelo" required>
+
+        <label>Ano:</label>
+        <input type="number" name="ano" min="1886" required>
+
+        <label>Preço:</label>
+        <input type="number" name="preco" min="0" step="0.01" required>
+
+        <label>Status:</label>
+        <input type="text" name="status" required>
+
+        <label>Montadora:</label>
+        <select name="id_montadora" required>
+            <option value="">Selecione</option>
+            {% for montadora in montadoras %}
+                <option value="{{ montadora.0 }}">
+                    {{ montadora.1 }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Marca:</label>
+        <select name="id_marca" required>
+            <option value="">Selecione</option>
+            {% for marca in marcas %}
+                <option value="{{ marca.0 }}">
+                    {{ marca.1 }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>ID Categoria:</label>
+        <input type="number" name="id_categoria" min="1" required>
+
+        <button type="submit">Cadastrar Veículo</button>
+    </form>
+
+    <hr>
+
+    <h2>Veículos em Estoque</h2>
+
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Modelo</th>
+                <th>Ano</th>
+                <th>Preço</th>
+                <th>Status</th>
+                <th>Montadora</th>
+                <th>Marca</th>
+                <th>ID Categoria</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in veiculos %}
+            <tr>
+                <td>
+                    {{ v.0 }}
+                    <form id="veiculo-{{ v.0 }}" method="POST"
+                          action="{% url 'estoque' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao"
+                               value="atualizar_veiculo">
+                        <input type="hidden" name="id_veiculo"
+                               value="{{ v.0 }}">
+                    </form>
+                </td>
+                <td>
+                    <input form="veiculo-{{ v.0 }}"
+                           name="modelo" value="{{ v.1 }}" required>
+                </td>
+                <td>
+                    <input form="veiculo-{{ v.0 }}" type="number"
+                           name="ano" value="{{ v.2 }}" required>
+                </td>
+                <td>
+                    <input form="veiculo-{{ v.0 }}" type="number"
+                           name="preco" step="0.01" min="0"
+                           value="{{ v.3 }}" required>
+                </td>
+                <td>
+                    <input form="veiculo-{{ v.0 }}"
+                           name="status" value="{{ v.4 }}" required>
+                </td>
+                <td>
+                    <select form="veiculo-{{ v.0 }}"
+                            name="id_montadora" required>
+                        {% for m in montadoras %}
+                        <option value="{{ m.0 }}"
+                            {% if m.0 == v.5 %}selected{% endif %}>
+                            {{ m.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <select form="veiculo-{{ v.0 }}"
+                            name="id_marca" required>
+                        {% for m in marcas %}
+                        <option value="{{ m.0 }}"
+                            {% if m.0 == v.7 %}selected{% endif %}>
+                            {{ m.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input form="veiculo-{{ v.0 }}" type="number"
+                           name="id_categoria" value="{{ v.9 }}"
+                           min="1" required>
+                </td>
+                <td>
+                    <button type="submit" form="veiculo-{{ v.0 }}">
+                        Atualizar
+                    </button>
+
+                    <form method="POST" action="{% url 'estoque' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao"
+                               value="remover_veiculo">
+                        <input type="hidden" name="id_veiculo"
+                               value="{{ v.0 }}">
+                        <button type="submit"
+                            onclick="return confirm('Remover este veículo?')">
+                            Remover
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9">Nenhum veículo cadastrado.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <!-- MARCAS -->
+    <h2>Gerenciar Marcas</h2>
+
+    <h3>Cadastrar Marca</h3>
+    <form method="POST" action="{% url 'estoque' %}">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="inserir_marca">
+        <label>Nome da marca:</label>
+        <input type="text" name="nome_marca" required>
+        <button type="submit">Adicionar Marca</button>
+    </form>
+
+    <h3>Marcas Cadastradas</h3>
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome da Marca</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in marcas %}
+            <tr>
+                <td>{{ m.0 }}</td>
+                <td>
+                    <form id="marca-{{ m.0 }}" method="POST"
+                          action="{% url 'estoque' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao"
+                               value="atualizar_marca">
+                        <input type="hidden" name="id_marca"
+                               value="{{ m.0 }}">
+                        <input type="text" name="nome_marca"
+                               value="{{ m.1 }}" required>
+                    </form>
+                </td>
+                <td>
+                    <button type="submit" form="marca-{{ m.0 }}">
+                        Atualizar
+                    </button>
+
+                    <form method="POST" action="{% url 'estoque' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao"
+                               value="remover_marca">
+                        <input type="hidden" name="id_marca"
+                               value="{{ m.0 }}">
+                        <button type="submit"
+                            onclick="return confirm('Remover esta marca?')">
+                            Remover
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">Nenhuma marca cadastrada.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <!-- MONTADORAS -->
+    <h2>Gerenciar Montadoras</h2>
+
+    <h3>Cadastrar Montadora</h3>
+    <form method="POST" action="{% url 'estoque' %}">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="inserir_montadora">
+        <label>Nome da montadora:</label>
+        <input type="text" name="nome_montadora" required>
+        <button type="submit">Adicionar Montadora</button>
+    </form>
+
+    <h3>Montadoras Cadastradas</h3>
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome da Montadora</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in montadoras %}
+            <tr>
+                <td>{{ m.0 }}</td>
+                <td>
+                    <form id="montadora-{{ m.0 }}" method="POST"
+                          action="{% url 'estoque' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao"
+                               value="atualizar_montadora">
+                        <input type="hidden" name="id_montadora"
+                               value="{{ m.0 }}">
+                        <input type="text" name="nome_montadora"
+                               value="{{ m.1 }}" required>
+                    </form>
+                </td>
+                <td>
+                    <button type="submit"
+                            form="montadora-{{ m.0 }}">
+                        Atualizar
+                    </button>
+
+                    <form method="POST" action="{% url 'estoque' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao"
+                               value="remover_montadora">
+                        <input type="hidden" name="id_montadora"
+                               value="{{ m.0 }}">
+                        <button type="submit"
+                            onclick="return confirm('Remover esta montadora?')">
+                            Remover
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">Nenhuma montadora cadastrada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 </body>
 </html>
