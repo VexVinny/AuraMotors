@@ -2,12 +2,68 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Aura Motors - Vendas</title>
+    <title>Aura Motors - Módulo de Vendas</title>
 </head>
 <body>
-    <h1>Módulo de Vendas</h1>
+
+    <nav>
+        <a href="/vendas/">Vendas</a> | 
+        <a href="/pessoas/">Pessoas</a> | 
+        <a href="/estoque/">Estoque</a>
+    </nav>
     <hr>
-    <h2>Histórico de Vendas</h2>
+
+    <h1>Módulo de Vendas</h1>
+
+    {% if mensagem %}
+        <p><strong>SUCESSO: {{ mensagem }}</strong></p>
+    {% endif %}
+
+    {% if erro %}
+        <p><strong>ERRO: {{ erro }}</strong></p>
+    {% endif %}
+
+    {% if venda_para_editar %}
+        <h2>Editar Venda #{{ venda_para_editar.0 }}</h2>
+        <form method="POST" action="/vendas/">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="atualizar">
+            <input type="hidden" name="id_venda" value="{{ venda_para_editar.0 }}">
+
+            <label for="id_cliente">ID do Cliente:</label><br>
+            <input type="number" id="id_cliente" name="id_cliente" value="{{ venda_para_editar.3 }}" required><br><br>
+
+            <label for="id_colaborador">ID do Colaborador (Vendedor):</label><br>
+            <input type="number" id="id_colaborador" name="id_colaborador" value="{{ venda_para_editar.4 }}" required><br><br>
+
+            <label for="valor_total">Valor Total (R$):</label><br>
+            <input type="number" step="0.01" id="valor_total" name="valor_total" value="{{ venda_para_editar.2 }}" required><br><br>
+
+            <button type="submit">Salvar Alterações</button>
+            <a href="/vendas/">Cancelar Edição</a>
+        </form>
+    {% else %}
+        <h2>Cadastrar Nova Venda</h2>
+        <form method="POST" action="/vendas/">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="cadastrar">
+
+            <label for="id_cliente">ID do Cliente:</label><br>
+            <input type="number" id="id_cliente" name="id_cliente" required><br><br>
+
+            <label for="id_colaborador">ID do Colaborador (Vendedor):</label><br>
+            <input type="number" id="id_colaborador" name="id_colaborador" required><br><br>
+
+            <label for="valor_total">Valor Total (R$):</label><br>
+            <input type="number" step="0.01" id="valor_total" name="valor_total" placeholder="00000.00" required><br><br>
+
+            <button type="submit">Registrar Venda</button>
+        </form>
+    {% endif %}
+
+    <hr>
+
+    <h2>Histórico de Vendas Registradas</h2>
     <table border="1">
         <thead>
             <tr>
@@ -16,6 +72,7 @@
                 <th>Valor Total</th>
                 <th>ID Cliente</th>
                 <th>ID Colaborador</th>
+                <th>Ações</th>
             </tr>
         </thead>
         <tbody>
@@ -26,13 +83,85 @@
                 <td>R$ {{ venda.2 }}</td>
                 <td>{{ venda.3 }}</td>
                 <td>{{ venda.4 }}</td>
+                <td>
+                    <a href="/vendas/?venda_id={{ venda.0 }}">Ver Itens</a> | 
+
+                    <!-- Editar Venda -->
+                    <a href="/vendas/?editar_id={{ venda.0 }}">Editar</a> | 
+
+                    <form method="POST" action="/vendas/" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="excluir">
+                        <input type="hidden" name="id_venda" value="{{ venda.0 }}">
+                        <button type="submit" onclick="return confirm('Tem certeza que deseja cancelar/excluir a Venda #{{ venda.0 }} e seus itens?');">Excluir</button>
+                    </form>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5">Nenhuma venda encontrada.</td>
+                <td colspan="6">Nenhuma venda encontrada no banco de dados.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    {% if venda_selecionada_id %}
+        <hr>
+        <h2>Itens da Venda #{{ venda_selecionada_id }}</h2>
+
+        <h3>Adicionar Veículo/Item a esta Venda</h3>
+        <form method="POST" action="/vendas/">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="adicionar_item">
+            <input type="hidden" name="id_venda" value="{{ venda_selecionada_id }}">
+
+            <label for="id_veiculo">ID do Veículo:</label><br>
+            <input type="number" id="id_veiculo" name="id_veiculo" required><br><br>
+
+            <label for="valor_unitario">Valor Unitário (R$):</label><br>
+            <input type="number" step="0.01" id="valor_unitario" name="valor_unitario" placeholder="00000.00" required><br><br>
+
+            <button type="submit">Adicionar Item</button>
+        </form>
+
+        <br>
+
+        <!-- Tabela com os Itens da Venda -->
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID Item</th>
+                    <th>ID Veículo</th>
+                    <th>Valor Unitário</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in itens_venda %}
+                <tr>
+                    <td>{{ item.0 }}</td>
+                    <td>{{ item.2 }}</td>
+                    <td>R$ {{ item.3 }}</td>
+                    <td>
+                        <form method="POST" action="/vendas/" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="remover_item">
+                            <input type="hidden" name="id_item_venda" value="{{ item.0 }}">
+                            <input type="hidden" name="id_venda" value="{{ venda_selecionada_id }}">
+                            <button type="submit" onclick="return confirm('Remover este item da venda?');">Remover Item</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">Nenhum veículo adicionado a esta venda ainda.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+        <a href="/vendas/">Fechar Detalhes da Venda</a>
+    {% endif %}
+
 </body>
 </html>

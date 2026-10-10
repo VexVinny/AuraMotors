@@ -20,28 +20,102 @@ from modulos.estoque import (
     atualizar_montadora,
     remover_montadora,
 )
-
+from modulos.vendas import (
+    listar_vendas,
+    buscar_venda_por_id,
+    registrar_venda,
+    atualizar_venda,
+    remover_venda,
+    listar_itens_da_venda,
+    adicionar_item_venda,
+    remover_item_venda
+)
 
 def view_vendas(request):
-    """View do módulo de vendas."""
+    mensagem = None
+    erro = None
+    venda_para_editar = None
+    venda_selecionada_id = request.GET.get('venda_id')
+
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+
+        if acao == 'cadastrar':
+            id_cliente = request.POST.get('id_cliente')
+            id_colaborador = request.POST.get('id_colaborador')
+            valor_total = request.POST.get('valor_total')
+
+            if id_cliente and id_colaborador and valor_total:
+                if registrar_venda(valor_total, id_cliente, id_colaborador):
+                    mensagem = "Venda cadastrada com sucesso!"
+                else:
+                    erro = "Erro ao registrar a venda no banco de dados."
+            else:
+                erro = "Preencha todos os campos."
+
+        elif acao == 'atualizar':
+            id_venda = request.POST.get('id_venda')
+            id_cliente = request.POST.get('id_cliente')
+            id_colaborador = request.POST.get('id_colaborador')
+            valor_total = request.POST.get('valor_total')
+
+            if id_venda and id_cliente and id_colaborador and valor_total:
+                if atualizar_venda(id_venda, valor_total, id_cliente, id_colaborador):
+                    mensagem = f"Venda ID #{id_venda} atualizada com sucesso!"
+                else:
+                    erro = "Erro ao atualizar a venda no banco de dados."
+            else:
+                erro = "Preencha todos os campos para atualizar."
+
+        elif acao == 'excluir':
+            id_venda = request.POST.get('id_venda')
+            if id_venda:
+                if remover_venda(id_venda):
+                    mensagem = f"Venda ID #{id_venda} (e seus itens) cancelada com sucesso!"
+                else:
+                    erro = "Erro ao remover a venda do banco de dados."
+
+        elif acao == 'adicionar_item':
+            id_venda = request.POST.get('id_venda')
+            id_veiculo = request.POST.get('id_veiculo')
+            valor_unitario = request.POST.get('valor_unitario')
+
+            if id_venda and id_veiculo and valor_unitario:
+                if adicionar_item_venda(id_venda, id_veiculo, valor_unitario):
+                    mensagem = "Item adicionado à venda com sucesso!"
+                    venda_selecionada_id = id_venda
+                else:
+                    erro = "Erro ao adicionar o item na venda."
+
+        elif acao == 'remover_item':
+            id_item_venda = request.POST.get('id_item_venda')
+            id_venda = request.POST.get('id_venda')
+            if id_item_venda:
+                if remover_item_venda(id_item_venda):
+                    mensagem = "Item removido da venda com sucesso!"
+                    venda_selecionada_id = id_venda
+                else:
+                    erro = "Erro ao remover o item da venda."
+
+    editar_id = request.GET.get('editar_id')
+    if editar_id:
+        venda_para_editar = buscar_venda_por_id(editar_id)
+
     vendas = listar_vendas()
 
-    contexto = {
-        "vendas": vendas
-    }
-
-    return render(request, "vendas.html", contexto)
-
-
-def view_pessoas(request):
-    """View do módulo de pessoas."""
-    clientes = listar_clientes()
+    itens_venda = []
+    if venda_selecionada_id:
+        itens_venda = listar_itens_da_venda(venda_selecionada_id)
 
     contexto = {
-        "clientes": clientes
+        'vendas': vendas,
+        'venda_para_editar': venda_para_editar,
+        'venda_selecionada_id': venda_selecionada_id,
+        'itens_venda': itens_venda,
+        'mensagem': mensagem,
+        'erro': erro
     }
-
-    return render(request, "pessoas.html", contexto)
+    return render(request, 'vendas.html', contexto)
 
 
 def view_estoque(request):
@@ -145,3 +219,14 @@ def view_estoque(request):
     }
 
     return render(request, "estoque.html", contexto)
+
+
+def view_pessoas(request):
+    """View do módulo de pessoas."""
+    clientes = listar_clientes()
+
+    contexto = {
+        "clientes": clientes
+    }
+
+    return render(request, "pessoas.html", contexto)
