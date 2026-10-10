@@ -70,8 +70,8 @@
                 <th>ID Venda</th>
                 <th>Data</th>
                 <th>Valor Total</th>
-                <th>ID Cliente</th>
-                <th>ID Colaborador</th>
+                <th>Cliente</th>
+                <th>Colaborador</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -162,6 +162,31 @@
         <br>
         <a href="/vendas/">Fechar Detalhes da Venda</a>
     {% endif %}
+
+    <hr>
+    <h2>Relatório: Veículos no Estoque Nunca Vendidos (Consulta via EXCEPT)</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID Veículo</th>
+                <th>Modelo</th>
+                <th>Preço</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for veiculo in veiculos_sem_venda %}
+            <tr>
+                <td>{{ veiculo.0 }}</td>
+                <td>{{ veiculo.1 }}</td>
+                <td>R$ {{ veiculo.2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">Todos os veículos do estoque já possuem ao menos uma venda vinculada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
 </body>
 </html>

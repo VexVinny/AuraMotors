@@ -1,9 +1,9 @@
-
 from django.shortcuts import render, redirect
 from django.contrib import messages
 
 # Importa as funções de cada módulo da equipe
-from modulos.vendas import(
+from modulos.vendas import (
+    listar_veiculos_nunca_vendidos,
     listar_vendas,
     buscar_venda_por_id,
     registrar_venda,
@@ -11,9 +11,9 @@ from modulos.vendas import(
     remover_venda,
     listar_itens_da_venda,
     adicionar_item_venda,
-    remover_item_venda
+    remover_item_venda,
 )
-from modulos.pessoas import(
+from modulos.pessoas import (
     listar_clientes,
     adicionar_cliente,
     atualizar_cliente,
@@ -23,7 +23,6 @@ from modulos.pessoas import(
     atualizar_colaborador,
     remover_colaborador,
 )
-
 from modulos.estoque import (
     listar_veiculos,
     registrar_veiculo,
@@ -39,11 +38,15 @@ from modulos.estoque import (
     remover_montadora,
 )
 
+
 def view_vendas(request):
+    """View do Módulo de Vendas (CRUD de Vendas, Itens e Relatório EXCEPT)."""
     mensagem = None
     erro = None
     venda_para_editar = None
-    venda_selecionada_id = request.GET.get('venda_id')
+
+    # Resgata o ID da venda selecionada via POST ou GET
+    venda_selecionada_id = request.POST.get('id_venda') or request.GET.get('venda_id')
 
     if request.method == 'POST':
         acao = request.POST.get('acao')
@@ -80,6 +83,7 @@ def view_vendas(request):
             if id_venda:
                 if remover_venda(id_venda):
                     mensagem = f"Venda ID #{id_venda} (e seus itens) cancelada com sucesso!"
+                    venda_selecionada_id = None
                 else:
                     erro = "Erro ao remover a venda do banco de dados."
 
@@ -115,11 +119,15 @@ def view_vendas(request):
     if venda_selecionada_id:
         itens_venda = listar_itens_da_venda(venda_selecionada_id)
 
+    # Executa a busca de veículos sem venda (Consulta via EXCEPT)
+    veiculos_sem_venda = listar_veiculos_nunca_vendidos()
+
     contexto = {
         'vendas': vendas,
         'venda_para_editar': venda_para_editar,
         'venda_selecionada_id': venda_selecionada_id,
         'itens_venda': itens_venda,
+        'veiculos_sem_venda': veiculos_sem_venda,
         'mensagem': mensagem,
         'erro': erro
     }
@@ -128,7 +136,6 @@ def view_vendas(request):
 
 def view_estoque(request):
     """View do módulo de estoque, veículos, marcas e montadoras."""
-
     if request.method == "POST":
         acao = request.POST.get("acao")
 
@@ -207,8 +214,7 @@ def view_estoque(request):
             else:
                 messages.error(
                     request,
-                    "Não foi possível realizar a operação. "
-                    "Verifique os dados ou os registros relacionados."
+                    "Não foi possível realizar a operação. Verifique os dados ou os registros relacionados."
                 )
 
         except (ValueError, KeyError):
@@ -230,9 +236,7 @@ def view_estoque(request):
 
 
 def view_pessoas(request):
-    """View do módulo de pessoas."""
-    
-def view_pessoas(request):
+    """View do módulo de pessoas (Clientes e Colaboradores)."""
     if request.method == "POST":
         acao = request.POST.get("acao")
         sucesso = False
@@ -288,8 +292,7 @@ def view_pessoas(request):
             else:
                 messages.error(
                     request,
-                    "Não foi possível realizar a operação. "
-                    "Verifique os dados ou os registros relacionados."
+                    "Não foi possível realizar a operação. Verifique os dados ou os registros relacionados."
                 )
 
         except (ValueError, KeyError):
