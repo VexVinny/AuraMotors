@@ -7,6 +7,7 @@ def abrir_conexao():
         "Port=5432;"
         "Database=postgres;"
         "UID=postgres;"      
-        "PWD=q1p0Q!P);"      
+        "1234;"
     )
     return pyodbc.connect(dados_conexao)
+print("Programa executado!")
