@@ -9,39 +9,29 @@ from conexao import abrir_conexao
 
 def listar_clientes():
     conexao = abrir_conexao()
-
-    if not conexao:
+    
+    if not conexao: 
         return []
-
-    cursor = None
 
     try:
         cursor = conexao.cursor()
-        cursor.execute(
-            '''
-            SELECT nome, email, cpf, telefone
-            FROM "Aura Motors".cliente
-            ORDER BY nome
-            '''
-        )
-
-        colunas = [coluna[0] for coluna in cursor.description]
-
-        return [
-            dict(zip(colunas, linha))
-            for linha in cursor.fetchall()
-        ]
+        
+        query = 'SELECT * FROM "Aura Motors".cliente;'
+        cursor.execute(query)
+        
+        resultados = cursor.fetchall()
+        return resultados
 
     except Exception as erro:
-        print(f"Erro ao listar clientes: {erro}")
+        print(f"Erro ao buscar clientes: {erro}")
         return []
-
+        
     finally:
-        if cursor is not None:
+        # Fecha as conexões de forma segura
+        if 'cursor' in locals() and cursor is not None:
             cursor.close()
-        conexao.close()
-
-
+        if 'conexao' in locals() and conexao is not None:
+            conexao.close()
 
 def adicionar_cliente(nome, email, cpf, telefone):
     conexao = abrir_conexao()
@@ -56,7 +46,7 @@ def adicionar_cliente(nome, email, cpf, telefone):
 
         query = '''
             INSERT INTO "Aura Motors".cliente
-            (nome, email, cpf, telefone)
+            (nome, cpf, email, telefone)
             VALUES (?, ?, ?, ?)
         '''
 
@@ -171,39 +161,30 @@ def remover_cliente(cpf):
 
 
 def listar_colaboradores():
+    """Busca todos os colaboradores cadastrados no banco."""
     conexao = abrir_conexao()
-
-    if not conexao:
+    
+    if not conexao: 
         return []
-
-    cursor = None
 
     try:
         cursor = conexao.cursor()
-        cursor.execute(
-            '''
-            SELECT nome, cpf, cargo
-            FROM "Aura Motors".colaborador
-            ORDER BY nome
-            '''
-        )
-
-        colunas = [coluna[0] for coluna in cursor.description]
-
-        return [
-            dict(zip(colunas, linha))
-            for linha in cursor.fetchall()
-        ]
+        
+        query = 'SELECT * FROM "Aura Motors".colaborador;'
+        cursor.execute(query)
+        
+        resultados = cursor.fetchall()
+        return resultados
 
     except Exception as erro:
-        print(f"Erro ao listar colaboradores: {erro}")
+        print(f"Erro ao buscar colaboradores: {erro}")
         return []
-
+        
     finally:
-        if cursor is not None:
+        if 'cursor' in locals() and cursor is not None:
             cursor.close()
-        conexao.close()
-
+        if 'conexao' in locals() and conexao is not None:
+            conexao.close()
 
 
 def adicionar_colaborador(nome, cpf, cargo):
