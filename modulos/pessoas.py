@@ -3,10 +3,10 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from conexao import conectar # Corrigido para conectar() que é o nome da tua função no conexao.py
+from conexao import abrir_conexao 
 
 def listar_clientes():
-    conexao = conectar()
+    conexao = abrir_conexao()
     if not conexao: return []
     try:
         cursor = conexao.cursor()
@@ -21,7 +21,7 @@ def listar_clientes():
         if 'conexao' in locals() and conexao is not None: conexao.close()
 
 def adicionar_cliente(nome, email, cpf, telefone):
-    conexao = conectar()
+    conexao = abrir_conexao()
     if not conexao: return False
     try:
         cursor = conexao.cursor()
@@ -42,7 +42,7 @@ def atualizar_cliente(cpf, nome=None, email=None, telefone=None):
     campos = {col: val for col, val in campos.items() if val is not None}
     if not campos: return False
     
-    conexao = conectar()
+    conexao = abrir_conexao()
     if not conexao: return False
     try:
         cursor = conexao.cursor()
@@ -65,7 +65,7 @@ def atualizar_cliente(cpf, nome=None, email=None, telefone=None):
         conexao.close()
 
 def remover_cliente(cpf):
-    conexao = conectar()
+    conexao = abrir_conexao()
     if not conexao: return False
     try:
         cursor = conexao.cursor()
@@ -83,7 +83,7 @@ def remover_cliente(cpf):
         conexao.close()
 
 def listar_colaboradores():
-    conexao = conectar()
+    conexao = abrir_conexao()
     if not conexao: return []
     try:
         cursor = conexao.cursor()
@@ -97,7 +97,7 @@ def listar_colaboradores():
         if 'conexao' in locals() and conexao is not None: conexao.close()
 
 def adicionar_colaborador(nome, cpf, cargo):
-    conexao = conectar()
+    conexao = abrir_conexao()
     if not conexao: return False
     try:
         cursor = conexao.cursor()
@@ -117,7 +117,7 @@ def atualizar_colaborador(cpf, nome=None, cargo=None):
     campos = {col: val for col, val in campos.items() if val is not None}
     if not campos: return False
     
-    conexao = conectar()
+    conexao = abrir_conexao()
     if not conexao: return False
     try:
         cursor = conexao.cursor()
@@ -140,7 +140,7 @@ def atualizar_colaborador(cpf, nome=None, cargo=None):
         conexao.close()
 
 def remover_colaborador(cpf):
-    conexao = conectar()
+    conexao = abrir_conexao()
     if not conexao: return False
     try:
         cursor = conexao.cursor()
