@@ -5,39 +5,31 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from conexao import abrir_conexao
 
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from conexao import abrir_conexao
+
 def listar_clientes():
+    """Busca e retorna todos os clientes cadastrados no banco."""
     conexao = abrir_conexao()
-
     if not conexao:
-        return
-
-    cursor = None
+        return []
 
     try:
         cursor = conexao.cursor()
-        query = 'SELECT * FROM "Aura Motors".vw_04_clientes_e_vendas;'
+        query = 'SELECT * FROM "Aura Motors".cliente;'
         cursor.execute(query)
-
-        colunas = [column[0] for column in cursor.description]
-        resultados = cursor.fetchall()
-
-        print("\n--- RELATÓRIO DE CLIENTES E COMPRAS ---")
-        print(" | ".join(colunas))
-        print("-" * 70)
-
-        for linha in resultados:
-            print(" | ".join(
-                str(valor) if valor is not None else "Sem compras"
-                for valor in linha
-            ))
-
-    except Exception as erro:
-        print(f"Erro ao listar clientes: {erro}")
-
-    finally:
-        if cursor is not None:
-            cursor.close()
+        clientes = cursor.fetchall()
+        
+        cursor.close()
         conexao.close()
+        return clientes
+
+    except Exception as e:
+        print(f"Erro ao listar clientes: {e}")
+        return []
         
         
 def adicionar_cliente(nome, email, cpf, telefone):
