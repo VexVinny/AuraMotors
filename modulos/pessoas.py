@@ -6,39 +6,41 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from conexao import abrir_conexao
 
 
+
 def listar_clientes():
     conexao = abrir_conexao()
 
     if not conexao:
-        return
+        return []
 
     cursor = None
 
     try:
         cursor = conexao.cursor()
-        query = 'SELECT * FROM "Aura Motors".vw_04_clientes_e_vendas;'
-        cursor.execute(query)
+        cursor.execute(
+            '''
+            SELECT nome, email, cpf, telefone
+            FROM "Aura Motors".cliente
+            ORDER BY nome
+            '''
+        )
 
-        colunas = [column[0] for column in cursor.description]
-        resultados = cursor.fetchall()
+        colunas = [coluna[0] for coluna in cursor.description]
 
-        print("\n--- RELATÓRIO DE CLIENTES E COMPRAS ---")
-        print(" | ".join(colunas))
-        print("-" * 70)
-
-        for linha in resultados:
-            print(" | ".join(
-                str(valor) if valor is not None else "Sem compras"
-                for valor in linha
-            ))
+        return [
+            dict(zip(colunas, linha))
+            for linha in cursor.fetchall()
+        ]
 
     except Exception as erro:
         print(f"Erro ao listar clientes: {erro}")
+        return []
 
     finally:
         if cursor is not None:
             cursor.close()
         conexao.close()
+
 
 
 def adicionar_cliente(nome, email, cpf, telefone):
@@ -167,41 +169,41 @@ def remover_cliente(cpf):
         conexao.close()
 
 
-def listar_desempenho_colaboradores():
+
+def listar_colaboradores():
     conexao = abrir_conexao()
 
     if not conexao:
-        return
+        return []
 
     cursor = None
 
     try:
         cursor = conexao.cursor()
-
         cursor.execute(
-            'SELECT * FROM "Aura Motors".mv_12_desempenho_colaboradores;'
+            '''
+            SELECT nome, cpf, cargo
+            FROM "Aura Motors".colaborador
+            ORDER BY nome
+            '''
         )
 
-        colunas = [column[0] for column in cursor.description]
-        resultado = cursor.fetchall()
+        colunas = [coluna[0] for coluna in cursor.description]
 
-        print("\n--- DESEMPENHO DOS COLABORADORES ---")
-        print(" | ".join(colunas))
-        print("-" * 70)
-
-        for linha in resultado:
-            print(" | ".join(
-                str(valor) if valor is not None else "N/A"
-                for valor in linha
-            ))
+        return [
+            dict(zip(colunas, linha))
+            for linha in cursor.fetchall()
+        ]
 
     except Exception as erro:
-        print(f"\nErro ao listar colaboradores: {erro}")
+        print(f"Erro ao listar colaboradores: {erro}")
+        return []
 
     finally:
         if cursor is not None:
             cursor.close()
         conexao.close()
+
 
 
 def adicionar_colaborador(nome, cpf, cargo):

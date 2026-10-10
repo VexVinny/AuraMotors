@@ -3,8 +3,26 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 
 # Importa as funções de cada módulo da equipe
-from modulos.vendas import listar_vendas
-from modulos.pessoas import listar_clientes
+from modulos.vendas import(
+    listar_vendas,
+    buscar_venda_por_id,
+    registrar_venda,
+    atualizar_venda,
+    remover_venda,
+    listar_itens_da_venda,
+    adicionar_item_venda,
+    remover_item_venda
+)
+from modulos.pessoas import(
+    listar_clientes,
+    adicionar_cliente,
+    atualizar_cliente,
+    remover_cliente,
+    listar_colaboradores,
+    adicionar_colaborador,
+    atualizar_colaborador,
+    remover_colaborador,
+)
 
 from modulos.estoque import (
     listar_veiculos,
@@ -19,16 +37,6 @@ from modulos.estoque import (
     registrar_montadora,
     atualizar_montadora,
     remover_montadora,
-)
-from modulos.vendas import (
-    listar_vendas,
-    buscar_venda_por_id,
-    registrar_venda,
-    atualizar_venda,
-    remover_venda,
-    listar_itens_da_venda,
-    adicionar_item_venda,
-    remover_item_venda
 )
 
 def view_vendas(request):
@@ -223,10 +231,78 @@ def view_estoque(request):
 
 def view_pessoas(request):
     """View do módulo de pessoas."""
-    clientes = listar_clientes()
+    
+def view_pessoas(request):
+    if request.method == "POST":
+        acao = request.POST.get("acao")
+        sucesso = False
+
+        try:
+            # CLIENTES
+            if acao == "inserir_cliente":
+                sucesso = adicionar_cliente(
+                    request.POST["nome"].strip(),
+                    request.POST["email"].strip(),
+                    request.POST["cpf"].strip(),
+                    request.POST.get("telefone", "").strip()
+                )
+
+            elif acao == "atualizar_cliente":
+                sucesso = atualizar_cliente(
+                    request.POST["cpf"].strip(),
+                    nome=request.POST["nome"].strip(),
+                    email=request.POST["email"].strip(),
+                    telefone=request.POST.get("telefone", "").strip()
+                )
+
+            elif acao == "remover_cliente":
+                sucesso = remover_cliente(
+                    request.POST["cpf"].strip()
+                )
+
+            # COLABORADORES
+            elif acao == "inserir_colaborador":
+                sucesso = adicionar_colaborador(
+                    request.POST["nome"].strip(),
+                    request.POST["cpf"].strip(),
+                    request.POST["cargo"].strip()
+                )
+
+            elif acao == "atualizar_colaborador":
+                sucesso = atualizar_colaborador(
+                    request.POST["cpf"].strip(),
+                    nome=request.POST["nome"].strip(),
+                    cargo=request.POST["cargo"].strip()
+                )
+
+            elif acao == "remover_colaborador":
+                sucesso = remover_colaborador(
+                    request.POST["cpf"].strip()
+                )
+
+            if sucesso:
+                messages.success(
+                    request,
+                    "Operação realizada com sucesso!"
+                )
+            else:
+                messages.error(
+                    request,
+                    "Não foi possível realizar a operação. "
+                    "Verifique os dados ou os registros relacionados."
+                )
+
+        except (ValueError, KeyError):
+            messages.error(
+                request,
+                "Dados inválidos. Confira os campos."
+            )
+
+        return redirect("pessoas")
 
     contexto = {
-        "clientes": clientes
+        "clientes": listar_clientes(),
+        "colaboradores": listar_colaboradores(),
     }
 
     return render(request, "pessoas.html", contexto)
