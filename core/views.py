@@ -3,7 +3,7 @@ from django.shortcuts import render
 # Importa as funções de cada módulo da equipe
 from modulos.vendas import listar_vendas
 from modulos.pessoas import listar_clientes
-from modulos.veiculos import listar_veiculos
+from modulos.estoque import listar_veiculos
 
 
 def view_vendas(request):

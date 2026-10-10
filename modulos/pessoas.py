@@ -5,33 +5,42 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from conexao import abrir_conexao
 
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from conexao import abrir_conexao
 
 def listar_clientes():
-    """Busca e retorna todos os clientes cadastrados no banco."""
     conexao = abrir_conexao()
+
     if not conexao:
-        return []
+        return
+
+    cursor = None
 
     try:
         cursor = conexao.cursor()
-        query = 'SELECT * FROM "Aura Motors".cliente;'
+        query = 'SELECT * FROM "Aura Motors".vw_04_clientes_e_vendas;'
         cursor.execute(query)
-        clientes = cursor.fetchall()
-        
-        cursor.close()
-        conexao.close()
-        return clientes
 
-    except Exception as e:
-        print(f"Erro ao listar clientes: {e}")
-        return []
-        
-        
+        colunas = [column[0] for column in cursor.description]
+        resultados = cursor.fetchall()
+
+        print("\n--- RELATÓRIO DE CLIENTES E COMPRAS ---")
+        print(" | ".join(colunas))
+        print("-" * 70)
+
+        for linha in resultados:
+            print(" | ".join(
+                str(valor) if valor is not None else "Sem compras"
+                for valor in linha
+            ))
+
+    except Exception as erro:
+        print(f"Erro ao listar clientes: {erro}")
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexao.close()
+
+
 def adicionar_cliente(nome, email, cpf, telefone):
     conexao = abrir_conexao()
 
@@ -61,9 +70,54 @@ def adicionar_cliente(nome, email, cpf, telefone):
     finally:
         if cursor is not None:
             cursor.close()
-        conexao.close() 
-        
-        
+        conexao.close()
+
+
+def atualizar_cliente(cpf, nome=None, email=None, telefone=None):
+    """Atualiza os dados de um cliente identificado pelo CPF.
+
+    Só os campos informados (diferentes de None) são alterados.
+    """
+    campos = {"nome": nome, "email": email, "telefone": telefone}
+    campos = {col: val for col, val in campos.items() if val is not None}
+
+    if not campos:
+        print("\nAviso: nenhum campo informado para atualizar.")
+        return
+
+    conexao = abrir_conexao()
+
+    if not conexao:
+        return
+
+    cursor = None
+
+    try:
+        cursor = conexao.cursor()
+
+        set_clause = ", ".join(f"{col} = ?" for col in campos)
+        query = f'UPDATE "Aura Motors".cliente SET {set_clause} WHERE cpf = ?'
+
+        cursor.execute(query, (*campos.values(), cpf))
+
+        if cursor.rowcount == 0:
+            conexao.rollback()
+            print(f"\nAviso: Nenhum cliente encontrado com CPF {cpf}.")
+            return
+
+        conexao.commit()
+        print(f"\nSucesso: cliente com CPF {cpf} atualizado!")
+
+    except Exception as erro:
+        conexao.rollback()
+        print(f"\nErro ao atualizar cliente: {erro}")
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexao.close()
+
+
 def remover_cliente(cpf):
     conexao = abrir_conexao()
 
@@ -111,8 +165,8 @@ def remover_cliente(cpf):
         if cursor is not None:
             cursor.close()
         conexao.close()
-        
-        
+
+
 def listar_desempenho_colaboradores():
     conexao = abrir_conexao()
 
@@ -148,7 +202,7 @@ def listar_desempenho_colaboradores():
         if cursor is not None:
             cursor.close()
         conexao.close()
-        
+
 
 def adicionar_colaborador(nome, cpf, cargo):
     conexao = abrir_conexao()
@@ -185,8 +239,56 @@ def adicionar_colaborador(nome, cpf, cargo):
         if cursor is not None:
             cursor.close()
         conexao.close()
-        
-        
+
+
+def atualizar_colaborador(cpf, nome=None, cargo=None):
+    """Atualiza os dados de um colaborador identificado pelo CPF.
+
+    Só os campos informados (diferentes de None) são alterados.
+    """
+    campos = {"nome": nome, "cargo": cargo}
+    campos = {col: val for col, val in campos.items() if val is not None}
+
+    if not campos:
+        print("\nAviso: nenhum campo informado para atualizar.")
+        return
+
+    conexao = abrir_conexao()
+
+    if not conexao:
+        return
+
+    cursor = None
+
+    try:
+        cursor = conexao.cursor()
+
+        set_clause = ", ".join(f"{col} = ?" for col in campos)
+        query = (
+            f'UPDATE "Aura Motors".colaborador '
+            f'SET {set_clause} WHERE cpf = ?'
+        )
+
+        cursor.execute(query, (*campos.values(), cpf))
+
+        if cursor.rowcount == 0:
+            conexao.rollback()
+            print(f"\nAviso: Nenhum colaborador encontrado com CPF {cpf}.")
+            return
+
+        conexao.commit()
+        print(f"\nSucesso: colaborador com CPF {cpf} atualizado!")
+
+    except Exception as erro:
+        conexao.rollback()
+        print(f"\nErro ao atualizar colaborador: {erro}")
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexao.close()
+
+
 def remover_colaborador(cpf):
     conexao = abrir_conexao()
 
@@ -240,6 +342,3 @@ def remover_colaborador(cpf):
         if cursor is not None:
             cursor.close()
         conexao.close()
-
-    
-                
