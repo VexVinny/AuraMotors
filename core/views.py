@@ -93,12 +93,23 @@ def view_vendas(request):
             valor_unitario = request.POST.get('valor_unitario')
 
             if id_venda and id_veiculo and valor_unitario:
-                if adicionar_item_venda(id_venda, id_veiculo, valor_unitario):
-                    mensagem = "Item adicionado à venda com sucesso!"
-                    venda_selecionada_id = id_venda
-                else:
-                    erro = "Erro ao adicionar o item na venda."
+                try:
+                    # Converte de texto (str) para int e float, tratando pontos e vírgulas
+                    id_venda_num = int(id_venda)
+                    id_veiculo_num = int(id_veiculo)
+                    valor_num = float(valor_unitario.replace(',', '.'))
 
+                    if adicionar_item_venda(id_venda_num, id_veiculo_num, valor_num):
+                        mensagem = f"Item (Veículo #{id_veiculo_num}) adicionado à Venda #{id_venda_num} com sucesso!"
+                    else:
+                        erro = "Erro ao inserir item no banco. Confira se o ID do Veículo existe no estoque."
+                    
+                    venda_selecionada_id = id_venda
+                except ValueError:
+                    erro = "Insira valores numéricos válidos para o ID do Veículo e Valor Unitário."
+            else:
+                erro = "Preencha todos os campos do item."
+                
         elif acao == 'remover_item':
             id_item_venda = request.POST.get('id_item_venda')
             id_venda = request.POST.get('id_venda')

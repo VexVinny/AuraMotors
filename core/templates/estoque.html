@@ -12,6 +12,13 @@
     <h2>Gestão de Estoque, Marcas e Montadoras</h2>
     <hr>
 
+    <nav>
+        <a href="{% url 'vendas' %}">Vendas</a> | 
+        <a href="{% url 'pessoas' %}">Pessoas</a> | 
+        <a href="{% url 'estoque' %}">Estoque</a>
+    </nav>
+    <hr>
+
     {% if messages %}
         {% for message in messages %}
             <p>{{ message }}</p>

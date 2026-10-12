@@ -148,7 +148,7 @@ def remover_venda(id_venda):
 
 
 def listar_itens_da_venda(id_venda):
-    """[SELECT] Lista todos os veículos/itens associados a uma venda específica."""
+    """[SELECT] Lista todos os itens/veículos associados a uma venda específica."""
     conexao = abrir_conexao()
     if not conexao:
         return []
@@ -156,7 +156,7 @@ def listar_itens_da_venda(id_venda):
     try:
         cursor = conexao.cursor()
         query = '''
-            SELECT id_item_venda, id_venda, id_veiculo, valor_unitario 
+            SELECT id_item, id_venda, id_veiculo, preco_praticado 
             FROM "Aura Motors".item_venda 
             WHERE id_venda = ?;
         '''
@@ -181,15 +181,15 @@ def adicionar_item_venda(id_venda, id_veiculo, valor_unitario):
     try:
         cursor = conexao.cursor()
         query = '''
-            INSERT INTO "Aura Motors".item_venda (id_venda, id_veiculo, valor_unitario)
+            INSERT INTO "Aura Motors".item_venda (id_venda, id_veiculo, preco_praticado)
             VALUES (?, ?, ?);
         '''
-        cursor.execute(query, (id_venda, id_veiculo, valor_unitario))
+        cursor.execute(query, (int(id_venda), int(id_veiculo), float(valor_unitario)))
         conexao.commit()
         cursor.close()
         return True
     except Exception as e:
-        print(f"Erro ao adicionar item na venda: {e}")
+        print(f"\n[ERRO SQL - ITEM VENDA]: {e}\n")
         if conexao:
             conexao.rollback()
         return False
@@ -198,43 +198,16 @@ def adicionar_item_venda(id_venda, id_veiculo, valor_unitario):
             conexao.close()
 
 
-def atualizar_item_venda(id_item_venda, valor_unitario):
-    """[UPDATE] Atualiza o valor unitário de um item da venda."""
+def remover_item_venda(id_item):
+    """[DELETE] Remove um item específico da venda pelo seu id_item."""
     conexao = abrir_conexao()
     if not conexao:
         return False
 
     try:
         cursor = conexao.cursor()
-        query = '''
-            UPDATE "Aura Motors".item_venda
-            SET valor_unitario = ?
-            WHERE id_item_venda = ?;
-        '''
-        cursor.execute(query, (valor_unitario, id_item_venda))
-        conexao.commit()
-        cursor.close()
-        return True
-    except Exception as e:
-        print(f"Erro ao atualizar item da venda: {e}")
-        if conexao:
-            conexao.rollback()
-        return False
-    finally:
-        if conexao:
-            conexao.close()
-
-
-def remover_item_venda(id_item_venda):
-    """[DELETE] Remove um item específico da venda."""
-    conexao = abrir_conexao()
-    if not conexao:
-        return False
-
-    try:
-        cursor = conexao.cursor()
-        query = 'DELETE FROM "Aura Motors".item_venda WHERE id_item_venda = ?;'
-        cursor.execute(query, (id_item_venda,))
+        query = 'DELETE FROM "Aura Motors".item_venda WHERE id_item = ?;'
+        cursor.execute(query, (id_item,))
         conexao.commit()
         cursor.close()
         return True
