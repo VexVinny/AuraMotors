@@ -36,7 +36,12 @@ from modulos.estoque import (
     registrar_montadora,
     atualizar_montadora,
     remover_montadora,
+    listar_categorias,
+    registrar_categoria,
+    atualizar_categoria,
+    remover_categoria,
 )
+
 
 
 def view_vendas(request):
@@ -54,13 +59,16 @@ def view_vendas(request):
         if acao == 'cadastrar':
             id_cliente = request.POST.get('id_cliente')
             id_colaborador = request.POST.get('id_colaborador')
-            valor_total = request.POST.get('valor_total')
+            id_veiculo = request.POST.get('id_veiculo')
 
-            if id_cliente and id_colaborador and valor_total:
-                if registrar_venda(valor_total, id_cliente, id_colaborador):
-                    mensagem = "Venda cadastrada com sucesso!"
-                else:
-                    erro = "Erro ao registrar a venda no banco de dados."
+            if id_cliente and id_colaborador and id_veiculo:
+                try:
+                    if registrar_venda(int(id_cliente), int(id_colaborador), int(id_veiculo)):
+                        mensagem = "Venda cadastrada com sucesso!"
+                    else:
+                        erro = "Erro ao registrar a venda. Confira se o cliente, o colaborador e o veículo existem."
+                except ValueError:
+                    erro = "Insira valores numéricos válidos."
             else:
                 erro = "Preencha todos os campos."
 
@@ -68,10 +76,9 @@ def view_vendas(request):
             id_venda = request.POST.get('id_venda')
             id_cliente = request.POST.get('id_cliente')
             id_colaborador = request.POST.get('id_colaborador')
-            valor_total = request.POST.get('valor_total')
 
-            if id_venda and id_cliente and id_colaborador and valor_total:
-                if atualizar_venda(id_venda, valor_total, id_cliente, id_colaborador):
+            if id_venda and id_cliente and id_colaborador:
+                if atualizar_venda(id_venda, id_cliente, id_colaborador):
                     mensagem = f"Venda ID #{id_venda} atualizada com sucesso!"
                 else:
                     erro = "Erro ao atualizar a venda no banco de dados."
@@ -90,21 +97,29 @@ def view_vendas(request):
         elif acao == 'adicionar_item':
             id_venda = request.POST.get('id_venda')
             id_veiculo = request.POST.get('id_veiculo')
-            valor_unitario = request.POST.get('valor_unitario')
 
-            if id_venda and id_veiculo and valor_unitario:
-                if adicionar_item_venda(id_venda, id_veiculo, valor_unitario):
-                    mensagem = "Item adicionado à venda com sucesso!"
+            if id_venda and id_veiculo:
+                try:
+                    id_venda_num = int(id_venda)
+                    id_veiculo_num = int(id_veiculo)
+
+                    if adicionar_item_venda(id_venda_num, id_veiculo_num):
+                        mensagem = f"Item (Veículo #{id_veiculo_num}) adicionado à Venda #{id_venda_num} e valor total atualizado!"
+                    else:
+                        erro = "Erro ao inserir item no banco. Confira se o ID do Veículo existe no estoque."
+
                     venda_selecionada_id = id_venda
-                else:
-                    erro = "Erro ao adicionar o item na venda."
-
+                except ValueError:
+                    erro = "Insira um valor numérico válido para o ID do Veículo."
+            else:
+                erro = "Informe o ID do veículo."
+                
         elif acao == 'remover_item':
             id_item_venda = request.POST.get('id_item_venda')
             id_venda = request.POST.get('id_venda')
-            if id_item_venda:
-                if remover_item_venda(id_item_venda):
-                    mensagem = "Item removido da venda com sucesso!"
+            if id_item_venda and id_venda:
+                if remover_item_venda(id_item_venda, id_venda):
+                    mensagem = "Item removido da venda e valor total atualizado!"
                     venda_selecionada_id = id_venda
                 else:
                     erro = "Erro ao remover o item da venda."
@@ -205,6 +220,22 @@ def view_estoque(request):
                     int(request.POST["id_montadora"])
                 )
 
+            # CATEGORIAS
+            elif acao == "inserir_categoria":
+                sucesso = registrar_categoria(
+                    request.POST["nome_categoria"].strip()
+                )
+
+            elif acao == "atualizar_categoria":
+                sucesso = atualizar_categoria(
+                    int(request.POST["id_categoria"]),
+                    request.POST["nome_categoria"].strip()
+                )
+
+            elif acao == "remover_categoria":
+                sucesso = remover_categoria(
+                    int(request.POST["id_categoria"])
+                )
             # MENSAGENS DO RESULTADO
             if sucesso:
                 messages.success(
@@ -230,6 +261,7 @@ def view_estoque(request):
         "veiculos": listar_veiculos(),
         "marcas": listar_marcas(),
         "montadoras": listar_montadoras(),
+        "categorias": listar_categorias(),
     }
 
     return render(request, "estoque.html", contexto)

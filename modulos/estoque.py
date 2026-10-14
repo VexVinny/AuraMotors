@@ -480,6 +480,124 @@ def remover_montadora(id_montadora):
         conexao.close()
         return False
 
+def listar_categorias():
+    """Busca todas as categorias cadastradas no banco."""
+    conexao = abrir_conexao()
+
+    if not conexao:
+        return []
+
+    try:
+        cursor = conexao.cursor()
+        cursor.execute(
+            'SELECT id_categoria, nome_categoria FROM "Aura Motors".categoria ORDER BY id_categoria;'
+        )
+        categorias = cursor.fetchall()
+        cursor.close()
+        conexao.close()
+        return categorias
+
+    except Exception as e:
+        print(f"Erro ao buscar categorias: {e}")
+        conexao.close()
+        return []
+
+
+def registrar_categoria(nome_categoria):
+    """Registra uma categoria no banco de dados."""
+    conexao = abrir_conexao()
+
+    if not conexao:
+        return False
+
+    try:
+        cursor = conexao.cursor()
+        cursor.execute(
+            'INSERT INTO "Aura Motors".categoria (nome_categoria) VALUES (?);',
+            (nome_categoria,)
+        )
+        conexao.commit()
+        cursor.close()
+        conexao.close()
+        return True
+
+    except Exception as e:
+        print(f"Erro ao cadastrar categoria: {e}")
+        conexao.rollback()
+        conexao.close()
+        return False
+
+
+def atualizar_categoria(id_categoria, nome_categoria):
+    """Atualiza o nome de uma categoria."""
+    conexao = abrir_conexao()
+
+    if not conexao:
+        return False
+
+    try:
+        cursor = conexao.cursor()
+        cursor.execute(
+            'UPDATE "Aura Motors".categoria SET nome_categoria = ? WHERE id_categoria = ?;',
+            (nome_categoria, id_categoria)
+        )
+
+        if cursor.rowcount == 0:
+            print(f"Aviso: nenhuma categoria encontrada com ID {id_categoria}.")
+            conexao.rollback()
+            cursor.close()
+            conexao.close()
+            return False
+
+        conexao.commit()
+        cursor.close()
+        conexao.close()
+        return True
+
+    except Exception as e:
+        print(f"Erro ao atualizar categoria: {e}")
+        conexao.rollback()
+        conexao.close()
+        return False
+
+
+def remover_categoria(id_categoria):
+    """Remove uma categoria pelo ID."""
+    conexao = abrir_conexao()
+
+    if not conexao:
+        return False
+
+    try:
+        cursor = conexao.cursor()
+        cursor.execute(
+            'DELETE FROM "Aura Motors".categoria WHERE id_categoria = ?;',
+            (id_categoria,)
+        )
+
+        if cursor.rowcount == 0:
+            print(f"Aviso: nenhuma categoria encontrada com ID {id_categoria}.")
+            conexao.rollback()
+            cursor.close()
+            conexao.close()
+            return False
+
+        conexao.commit()
+        cursor.close()
+        conexao.close()
+        return True
+
+    except pyodbc.IntegrityError:
+        print(f"Erro de integridade: a categoria {id_categoria} está em uso por veículos.")
+        conexao.rollback()
+        conexao.close()
+        return False
+
+    except Exception as e:
+        print(f"Erro ao remover categoria: {e}")
+        conexao.rollback()
+        conexao.close()
+        return False
 
 if __name__ == "__main__":
     print("--- Veículos cadastrados ---")

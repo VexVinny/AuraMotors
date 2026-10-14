@@ -6,7 +6,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from conexao import abrir_conexao
 
 
-
+# ---------------------------------------------------------------
+# CLIENTES
+# ---------------------------------------------------------------
 def listar_clientes():
     conexao = abrir_conexao()
 
@@ -19,9 +21,9 @@ def listar_clientes():
         cursor = conexao.cursor()
         cursor.execute(
             '''
-            SELECT nome, email, cpf, telefone
+            SELECT id_cliente, nome, email, cpf, telefone
             FROM "Aura Motors".cliente
-            ORDER BY nome
+            ORDER BY id_cliente
             '''
         )
 
@@ -42,12 +44,11 @@ def listar_clientes():
         conexao.close()
 
 
-
 def adicionar_cliente(nome, email, cpf, telefone):
     conexao = abrir_conexao()
 
     if not conexao:
-        return
+        return False
 
     cursor = None
 
@@ -64,10 +65,12 @@ def adicionar_cliente(nome, email, cpf, telefone):
         conexao.commit()
 
         print(f"\nCliente '{nome}' inserido com sucesso!")
+        return True
 
     except Exception as erro:
         conexao.rollback()
         print(f"\nErro ao inserir cliente: {erro}")
+        return False
 
     finally:
         if cursor is not None:
@@ -85,12 +88,12 @@ def atualizar_cliente(cpf, nome=None, email=None, telefone=None):
 
     if not campos:
         print("\nAviso: nenhum campo informado para atualizar.")
-        return
+        return False
 
     conexao = abrir_conexao()
 
     if not conexao:
-        return
+        return False
 
     cursor = None
 
@@ -105,14 +108,16 @@ def atualizar_cliente(cpf, nome=None, email=None, telefone=None):
         if cursor.rowcount == 0:
             conexao.rollback()
             print(f"\nAviso: Nenhum cliente encontrado com CPF {cpf}.")
-            return
+            return False
 
         conexao.commit()
         print(f"\nSucesso: cliente com CPF {cpf} atualizado!")
+        return True
 
     except Exception as erro:
         conexao.rollback()
         print(f"\nErro ao atualizar cliente: {erro}")
+        return False
 
     finally:
         if cursor is not None:
@@ -124,7 +129,7 @@ def remover_cliente(cpf):
     conexao = abrir_conexao()
 
     if not conexao:
-        return
+        return False
 
     cursor = None
     nome_cliente = "desconhecido"
@@ -140,7 +145,7 @@ def remover_cliente(cpf):
 
         if not cliente:
             print(f"\nAviso: Nenhum cliente encontrado com CPF {cpf}.")
-            return
+            return False
 
         nome_cliente = cliente[0]
 
@@ -151,6 +156,7 @@ def remover_cliente(cpf):
 
         conexao.commit()
         print(f"\nSucesso: O cliente '{nome_cliente}' foi removido do sistema!")
+        return True
 
     except pyodbc.IntegrityError:
         conexao.rollback()
@@ -158,10 +164,12 @@ def remover_cliente(cpf):
             f"\nErro de integridade: não foi possível remover "
             f"o cliente '{nome_cliente}' devido a registros relacionados."
         )
+        return False
 
     except Exception as erro:
         conexao.rollback()
         print(f"\nErro inesperado ao remover o cliente: {erro}")
+        return False
 
     finally:
         if cursor is not None:
@@ -169,7 +177,9 @@ def remover_cliente(cpf):
         conexao.close()
 
 
-
+# ---------------------------------------------------------------
+# COLABORADORES
+# ---------------------------------------------------------------
 def listar_colaboradores():
     conexao = abrir_conexao()
 
@@ -182,9 +192,9 @@ def listar_colaboradores():
         cursor = conexao.cursor()
         cursor.execute(
             '''
-            SELECT nome, cpf, cargo
+            SELECT id_colaborador, nome, cpf, cargo
             FROM "Aura Motors".colaborador
-            ORDER BY nome
+            ORDER BY id_colaborador
             '''
         )
 
@@ -205,12 +215,11 @@ def listar_colaboradores():
         conexao.close()
 
 
-
 def adicionar_colaborador(nome, cpf, cargo):
     conexao = abrir_conexao()
 
     if not conexao:
-        return
+        return False
 
     cursor = None
 
@@ -232,10 +241,12 @@ def adicionar_colaborador(nome, cpf, cargo):
             f"\nSucesso: O colaborador '{nome}', "
             f"com cargo '{cargo}', foi adicionado ao sistema!"
         )
+        return True
 
     except Exception as erro:
         conexao.rollback()
         print(f"\nErro ao registrar colaborador: {erro}")
+        return False
 
     finally:
         if cursor is not None:
@@ -253,12 +264,12 @@ def atualizar_colaborador(cpf, nome=None, cargo=None):
 
     if not campos:
         print("\nAviso: nenhum campo informado para atualizar.")
-        return
+        return False
 
     conexao = abrir_conexao()
 
     if not conexao:
-        return
+        return False
 
     cursor = None
 
@@ -276,14 +287,16 @@ def atualizar_colaborador(cpf, nome=None, cargo=None):
         if cursor.rowcount == 0:
             conexao.rollback()
             print(f"\nAviso: Nenhum colaborador encontrado com CPF {cpf}.")
-            return
+            return False
 
         conexao.commit()
         print(f"\nSucesso: colaborador com CPF {cpf} atualizado!")
+        return True
 
     except Exception as erro:
         conexao.rollback()
         print(f"\nErro ao atualizar colaborador: {erro}")
+        return False
 
     finally:
         if cursor is not None:
@@ -295,7 +308,7 @@ def remover_colaborador(cpf):
     conexao = abrir_conexao()
 
     if not conexao:
-        return
+        return False
 
     cursor = None
     nome_colaborador = "desconhecido"
@@ -313,7 +326,7 @@ def remover_colaborador(cpf):
             print(
                 f"\nAviso: Nenhum colaborador encontrado com CPF {cpf}."
             )
-            return
+            return False
 
         nome_colaborador = colaborador[0]
 
@@ -328,6 +341,7 @@ def remover_colaborador(cpf):
             f"\nSucesso: O colaborador '{nome_colaborador}' "
             f"foi removido do sistema!"
         )
+        return True
 
     except pyodbc.IntegrityError:
         conexao.rollback()
@@ -335,10 +349,12 @@ def remover_colaborador(cpf):
             f"\nErro de integridade: não foi possível remover "
             f"o colaborador '{nome_colaborador}' devido a registros relacionados."
         )
+        return False
 
     except Exception as erro:
         conexao.rollback()
         print(f"\nErro inesperado ao remover o colaborador: {erro}")
+        return False
 
     finally:
         if cursor is not None:

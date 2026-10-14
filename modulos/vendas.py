@@ -2,9 +2,20 @@ import sys
 import os
 from datetime import date
 
+STATUS_DISPONIVEL = 'disponivel'
+STATUS_VENDIDO = 'vendido'
+
 # Garante a importação do conexao.py
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from conexao import abrir_conexao
+
+def _veiculo_ja_vendido(cursor, id_veiculo):
+    """Retorna True se o veículo já está vinculado a algum item de venda."""
+    cursor.execute(
+        'SELECT 1 FROM "Aura Motors".item_venda WHERE id_veiculo = ?;',
+        (int(id_veiculo),)
+    )
+    return cursor.fetchone() is not None
 
 def listar_vendas():
     """[SELECT com INNER JOIN] Busca todas as vendas trazendo o Nome do Cliente e do Colaborador."""
@@ -63,20 +74,47 @@ def buscar_venda_por_id(id_venda):
             conexao.close()
 
 
-def registrar_venda(valor_total, id_cliente, id_colaborador):
-    """[INSERT] Cadastra uma nova venda com a data atual."""
+def registrar_venda(id_cliente, id_colaborador, id_veiculo):
+    """[INSERT + UPDATE] Cadastra a venda, cria o item e marca o veículo como vendido."""
     conexao = abrir_conexao()
     if not conexao:
         return False
 
     try:
         cursor = conexao.cursor()
-        query = '''
+
+        cursor.execute(
+            'SELECT preco FROM "Aura Motors".veiculo WHERE id_veiculo = ?;',
+            (int(id_veiculo),)
+        )
+        resultado = cursor.fetchone()
+        if not resultado:
+            print(f"Veículo {id_veiculo} não encontrado.")
+            return False
+        preco = resultado[0]
+
+        if _veiculo_ja_vendido(cursor, id_veiculo):
+            print(f"Veículo {id_veiculo} já foi vendido.")
+            return False
+
+        cursor.execute('''
             INSERT INTO "Aura Motors".venda (data_venda, valor_total, id_cliente, id_colaborador)
-            VALUES (?, ?, ?, ?);
-        '''
-        data_hoje = date.today()
-        cursor.execute(query, (data_hoje, valor_total, id_cliente, id_colaborador))
+            VALUES (?, ?, ?, ?)
+            RETURNING id_venda;
+        ''', (date.today(), preco, int(id_cliente), int(id_colaborador)))
+        id_venda = cursor.fetchone()[0]
+
+        cursor.execute('''
+            INSERT INTO "Aura Motors".item_venda (id_venda, id_veiculo, preco_praticado)
+            VALUES (?, ?, ?);
+        ''', (id_venda, int(id_veiculo), preco))
+
+        # Marca o veículo como vendido
+        cursor.execute(
+            'UPDATE "Aura Motors".veiculo SET status = ? WHERE id_veiculo = ?;',
+            (STATUS_VENDIDO, int(id_veiculo))
+        )
+
         conexao.commit()
         cursor.close()
         return True
@@ -90,20 +128,20 @@ def registrar_venda(valor_total, id_cliente, id_colaborador):
             conexao.close()
 
 
-def atualizar_venda(id_venda, valor_total, id_cliente, id_colaborador):
-    """[UPDATE] Atualiza as informações de uma venda existente."""
+def atualizar_venda(id_venda, id_cliente, id_colaborador):
+    """[UPDATE] Atualiza cliente e colaborador de uma venda.
+    O valor_total não é editado aqui: ele vem da soma dos itens."""
     conexao = abrir_conexao()
     if not conexao:
         return False
 
     try:
         cursor = conexao.cursor()
-        query = '''
+        cursor.execute('''
             UPDATE "Aura Motors".venda
-            SET valor_total = ?, id_cliente = ?, id_colaborador = ?
+            SET id_cliente = ?, id_colaborador = ?
             WHERE id_venda = ?;
-        '''
-        cursor.execute(query, (valor_total, id_cliente, id_colaborador, id_venda))
+        ''', (int(id_cliente), int(id_colaborador), int(id_venda)))
         conexao.commit()
         cursor.close()
         return True
@@ -118,21 +156,24 @@ def atualizar_venda(id_venda, valor_total, id_cliente, id_colaborador):
 
 
 def remover_venda(id_venda):
-    """[DELETE] Remove uma venda e seus itens vinculados na tabela item_venda."""
+    """[DELETE + UPDATE] Remove a venda e seus itens e devolve os veículos para disponível."""
     conexao = abrir_conexao()
     if not conexao:
         return False
 
     try:
         cursor = conexao.cursor()
-        
-        # 1. Remove primeiro os itens vinculados na tabela item_venda (evita erro de Chave Estrangeira)
-        query_itens = 'DELETE FROM "Aura Motors".item_venda WHERE id_venda = ?;'
-        cursor.execute(query_itens, (id_venda,))
 
-        # 2. Remove o registro principal da venda
-        query_venda = 'DELETE FROM "Aura Motors".venda WHERE id_venda = ?;'
-        cursor.execute(query_venda, (id_venda,))
+        cursor.execute('''
+            UPDATE "Aura Motors".veiculo
+            SET status = ?
+            WHERE id_veiculo IN (
+                SELECT id_veiculo FROM "Aura Motors".item_venda WHERE id_venda = ?
+            );
+        ''', (STATUS_DISPONIVEL, int(id_venda)))
+
+        cursor.execute('DELETE FROM "Aura Motors".item_venda WHERE id_venda = ?;', (int(id_venda),))
+        cursor.execute('DELETE FROM "Aura Motors".venda WHERE id_venda = ?;', (int(id_venda),))
 
         conexao.commit()
         cursor.close()
@@ -148,7 +189,7 @@ def remover_venda(id_venda):
 
 
 def listar_itens_da_venda(id_venda):
-    """[SELECT] Lista todos os veículos/itens associados a uma venda específica."""
+    """[SELECT] Lista todos os itens/veículos associados a uma venda específica."""
     conexao = abrir_conexao()
     if not conexao:
         return []
@@ -156,7 +197,7 @@ def listar_itens_da_venda(id_venda):
     try:
         cursor = conexao.cursor()
         query = '''
-            SELECT id_item_venda, id_venda, id_veiculo, valor_unitario 
+            SELECT id_item, id_venda, id_veiculo, preco_praticado 
             FROM "Aura Motors".item_venda 
             WHERE id_venda = ?;
         '''
@@ -172,24 +213,55 @@ def listar_itens_da_venda(id_venda):
             conexao.close()
 
 
-def adicionar_item_venda(id_venda, id_veiculo, valor_unitario):
-    """[INSERT] Adiciona um veículo como item de uma venda."""
+def adicionar_item_venda(id_venda, id_veiculo):
+    """[INSERT + UPDATE] Adiciona o veículo à venda, recalcula o total e marca como vendido."""
     conexao = abrir_conexao()
     if not conexao:
         return False
 
     try:
         cursor = conexao.cursor()
-        query = '''
-            INSERT INTO "Aura Motors".item_venda (id_venda, id_veiculo, valor_unitario)
+
+        cursor.execute(
+            'SELECT preco FROM "Aura Motors".veiculo WHERE id_veiculo = ?;',
+            (int(id_veiculo),)
+        )
+        resultado = cursor.fetchone()
+        if not resultado:
+            print(f"Veículo {id_veiculo} não encontrado.")
+            return False
+        preco = resultado[0]
+
+        if _veiculo_ja_vendido(cursor, id_veiculo):
+            print(f"Veículo {id_veiculo} já foi vendido.")
+            return False
+
+        cursor.execute('''
+            INSERT INTO "Aura Motors".item_venda (id_venda, id_veiculo, preco_praticado)
             VALUES (?, ?, ?);
-        '''
-        cursor.execute(query, (id_venda, id_veiculo, valor_unitario))
+        ''', (int(id_venda), int(id_veiculo), preco))
+
+        cursor.execute('''
+            UPDATE "Aura Motors".venda
+            SET valor_total = (
+                SELECT COALESCE(SUM(preco_praticado), 0)
+                FROM "Aura Motors".item_venda
+                WHERE id_venda = ?
+            )
+            WHERE id_venda = ?;
+        ''', (int(id_venda), int(id_venda)))
+
+        # Marca o veículo como vendido
+        cursor.execute(
+            'UPDATE "Aura Motors".veiculo SET status = ? WHERE id_veiculo = ?;',
+            (STATUS_VENDIDO, int(id_veiculo))
+        )
+
         conexao.commit()
         cursor.close()
         return True
     except Exception as e:
-        print(f"Erro ao adicionar item na venda: {e}")
+        print(f"\n[ERRO SQL - ITEM VENDA]: {e}\n")
         if conexao:
             conexao.rollback()
         return False
@@ -198,43 +270,44 @@ def adicionar_item_venda(id_venda, id_veiculo, valor_unitario):
             conexao.close()
 
 
-def atualizar_item_venda(id_item_venda, valor_unitario):
-    """[UPDATE] Atualiza o valor unitário de um item da venda."""
+def remover_item_venda(id_item, id_venda):
+    """[DELETE + UPDATE] Remove o item, recalcula o total e devolve o veículo para disponível."""
     conexao = abrir_conexao()
     if not conexao:
         return False
 
     try:
         cursor = conexao.cursor()
-        query = '''
-            UPDATE "Aura Motors".item_venda
-            SET valor_unitario = ?
-            WHERE id_item_venda = ?;
-        '''
-        cursor.execute(query, (valor_unitario, id_item_venda))
-        conexao.commit()
-        cursor.close()
-        return True
-    except Exception as e:
-        print(f"Erro ao atualizar item da venda: {e}")
-        if conexao:
-            conexao.rollback()
-        return False
-    finally:
-        if conexao:
-            conexao.close()
 
+        # Descobre qual veículo está nesse item antes de apagar
+        cursor.execute(
+            'SELECT id_veiculo FROM "Aura Motors".item_venda WHERE id_item = ?;',
+            (int(id_item),)
+        )
+        resultado = cursor.fetchone()
+        if not resultado:
+            print(f"Item {id_item} não encontrado.")
+            return False
+        id_veiculo = resultado[0]
 
-def remover_item_venda(id_item_venda):
-    """[DELETE] Remove um item específico da venda."""
-    conexao = abrir_conexao()
-    if not conexao:
-        return False
+        cursor.execute('DELETE FROM "Aura Motors".item_venda WHERE id_item = ?;', (int(id_item),))
 
-    try:
-        cursor = conexao.cursor()
-        query = 'DELETE FROM "Aura Motors".item_venda WHERE id_item_venda = ?;'
-        cursor.execute(query, (id_item_venda,))
+        cursor.execute('''
+            UPDATE "Aura Motors".venda
+            SET valor_total = (
+                SELECT COALESCE(SUM(preco_praticado), 0)
+                FROM "Aura Motors".item_venda
+                WHERE id_venda = ?
+            )
+            WHERE id_venda = ?;
+        ''', (int(id_venda), int(id_venda)))
+
+        # Veículo volta a ficar disponível
+        cursor.execute(
+            'UPDATE "Aura Motors".veiculo SET status = ? WHERE id_veiculo = ?;',
+            (STATUS_DISPONIVEL, id_veiculo)
+        )
+
         conexao.commit()
         cursor.close()
         return True
