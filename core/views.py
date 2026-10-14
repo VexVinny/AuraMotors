@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 
-# Importa as funções de cada módulo da equipe
 from modulos.vendas import (
     listar_veiculos_nunca_vendidos,
     listar_vendas,
@@ -50,7 +49,6 @@ def view_vendas(request):
     erro = None
     venda_para_editar = None
 
-    # Resgata o ID da venda selecionada via POST ou GET
     venda_selecionada_id = request.POST.get('id_venda') or request.GET.get('venda_id')
 
     if request.method == 'POST':
@@ -134,7 +132,6 @@ def view_vendas(request):
     if venda_selecionada_id:
         itens_venda = listar_itens_da_venda(venda_selecionada_id)
 
-    # Executa a busca de veículos sem venda (Consulta via EXCEPT)
     veiculos_sem_venda = listar_veiculos_nunca_vendidos()
 
     contexto = {
@@ -157,7 +154,6 @@ def view_estoque(request):
         try:
             sucesso = False
 
-            # VEÍCULOS
             if acao == "inserir_veiculo":
                 sucesso = registrar_veiculo(
                     request.POST["modelo"],
@@ -203,7 +199,6 @@ def view_estoque(request):
                     int(request.POST["id_marca"])
                 )
 
-            # MONTADORAS
             elif acao == "inserir_montadora":
                 sucesso = registrar_montadora(
                     request.POST["nome_montadora"].strip()
@@ -220,7 +215,6 @@ def view_estoque(request):
                     int(request.POST["id_montadora"])
                 )
 
-            # CATEGORIAS
             elif acao == "inserir_categoria":
                 sucesso = registrar_categoria(
                     request.POST["nome_categoria"].strip()
@@ -236,7 +230,6 @@ def view_estoque(request):
                 sucesso = remover_categoria(
                     int(request.POST["id_categoria"])
                 )
-            # MENSAGENS DO RESULTADO
             if sucesso:
                 messages.success(
                     request,
@@ -274,7 +267,6 @@ def view_pessoas(request):
         sucesso = False
 
         try:
-            # CLIENTES
             if acao == "inserir_cliente":
                 sucesso = adicionar_cliente(
                     request.POST["nome"].strip(),
@@ -296,7 +288,6 @@ def view_pessoas(request):
                     request.POST["cpf"].strip()
                 )
 
-            # COLABORADORES
             elif acao == "inserir_colaborador":
                 sucesso = adicionar_colaborador(
                     request.POST["nome"].strip(),

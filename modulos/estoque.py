@@ -8,7 +8,6 @@ sys.path.append(os.path.abspath(
 
 from conexao import abrir_conexao
 
-
 def listar_veiculos():
     """Busca todos os veículos cadastrados no banco."""
     conexao = abrir_conexao()

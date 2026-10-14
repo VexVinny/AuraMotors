@@ -5,7 +5,6 @@ from datetime import date
 STATUS_DISPONIVEL = 'disponivel'
 STATUS_VENDIDO = 'vendido'
 
-# Garante a importação do conexao.py
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from conexao import abrir_conexao
 
@@ -251,7 +250,6 @@ def adicionar_item_venda(id_venda, id_veiculo):
             WHERE id_venda = ?;
         ''', (int(id_venda), int(id_venda)))
 
-        # Marca o veículo como vendido
         cursor.execute(
             'UPDATE "Aura Motors".veiculo SET status = ? WHERE id_veiculo = ?;',
             (STATUS_VENDIDO, int(id_veiculo))
@@ -279,7 +277,6 @@ def remover_item_venda(id_item, id_venda):
     try:
         cursor = conexao.cursor()
 
-        # Descobre qual veículo está nesse item antes de apagar
         cursor.execute(
             'SELECT id_veiculo FROM "Aura Motors".item_venda WHERE id_item = ?;',
             (int(id_item),)
@@ -302,7 +299,6 @@ def remover_item_venda(id_item, id_venda):
             WHERE id_venda = ?;
         ''', (int(id_venda), int(id_venda)))
 
-        # Veículo volta a ficar disponível
         cursor.execute(
             'UPDATE "Aura Motors".veiculo SET status = ? WHERE id_veiculo = ?;',
             (STATUS_DISPONIVEL, id_veiculo)

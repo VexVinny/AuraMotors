@@ -5,10 +5,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from conexao import abrir_conexao
 
-
-# ---------------------------------------------------------------
-# CLIENTES
-# ---------------------------------------------------------------
 def listar_clientes():
     conexao = abrir_conexao()
 
@@ -176,10 +172,6 @@ def remover_cliente(cpf):
             cursor.close()
         conexao.close()
 
-
-# ---------------------------------------------------------------
-# COLABORADORES
-# ---------------------------------------------------------------
 def listar_colaboradores():
     conexao = abrir_conexao()
 
