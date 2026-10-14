@@ -8,7 +8,7 @@ def abrir_conexao():
             "Port=5432;"
             "Database=postgres;"
             "UID=postgres;"
-            "PWD=1234;"
+            "PWD=q1p0Q!P);"
         )
         return pyodbc.connect(dados_conexao)
     except Exception as e:

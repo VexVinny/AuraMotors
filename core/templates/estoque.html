@@ -138,7 +138,7 @@
                             name="id_marca" required>
                         {% for m in marcas %}
                         <option value="{{ m.0 }}"
-                            {% if m.0 == v.7 %}selected{% endif %}>
+                            {% if m.0 == v.6 %}selected{% endif %}>
                             {{ m.1 }}
                         </option>
                         {% endfor %}
@@ -150,7 +150,7 @@
                             name="id_categoria" required>
                         {% for c in categorias %}
                         <option value="{{ c.0 }}"
-                            {% if c.0 == v.9 %}selected{% endif %}>
+                            {% if c.0 == v.7 %}selected{% endif %}>
                             {{ c.1 }}
                         </option>
                         {% endfor %}

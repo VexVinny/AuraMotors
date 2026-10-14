@@ -64,13 +64,31 @@
         <tbody>
             {% for cliente in clientes %}
             <tr>
-                <td>{{ cliente.id_cliente }}</td>
-                <td>{{ cliente.nome }}</td>
-                <td>{{ cliente.email }}</td>
-                <td>{{ cliente.cpf }}</td>
-                <td>{{ cliente.telefone }}</td>
                 <td>
-                    <form method="POST" action="{% url 'pessoas' %}">
+                    {{ cliente.id_cliente }}
+                    <form id="cliente-{{ cliente.id_cliente }}" method="POST" action="{% url 'pessoas' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="atualizar_cliente">
+                        <input type="hidden" name="cpf" value="{{ cliente.cpf }}">
+                    </form>
+                </td>
+                <td>
+                    <input form="cliente-{{ cliente.id_cliente }}" type="text"
+                           name="nome" value="{{ cliente.nome }}" required>
+                </td>
+                <td>
+                    <input form="cliente-{{ cliente.id_cliente }}" type="email"
+                           name="email" value="{{ cliente.email }}" required>
+                </td>
+                <td>{{ cliente.cpf }}</td>
+                <td>
+                    <input form="cliente-{{ cliente.id_cliente }}" type="text"
+                           name="telefone" value="{{ cliente.telefone|default_if_none:'' }}">
+                </td>
+                <td>
+                    <button type="submit" form="cliente-{{ cliente.id_cliente }}">Atualizar</button>
+
+                    <form method="POST" action="{% url 'pessoas' %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="acao" value="remover_cliente">
                         <input type="hidden" name="cpf" value="{{ cliente.cpf }}">
@@ -121,12 +139,27 @@
         <tbody>
             {% for colaborador in colaboradores %}
             <tr>
-                <td>{{ colaborador.id_colaborador }}</td>
-                <td>{{ colaborador.nome }}</td>
-                <td>{{ colaborador.cpf }}</td>
-                <td>{{ colaborador.cargo }}</td>
                 <td>
-                    <form method="POST" action="{% url 'pessoas' %}">
+                    {{ colaborador.id_colaborador }}
+                    <form id="colaborador-{{ colaborador.id_colaborador }}" method="POST" action="{% url 'pessoas' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="atualizar_colaborador">
+                        <input type="hidden" name="cpf" value="{{ colaborador.cpf }}">
+                    </form>
+                </td>
+                <td>
+                    <input form="colaborador-{{ colaborador.id_colaborador }}" type="text"
+                           name="nome" value="{{ colaborador.nome }}" required>
+                </td>
+                <td>{{ colaborador.cpf }}</td>
+                <td>
+                    <input form="colaborador-{{ colaborador.id_colaborador }}" type="text"
+                           name="cargo" value="{{ colaborador.cargo }}" required>
+                </td>
+                <td>
+                    <button type="submit" form="colaborador-{{ colaborador.id_colaborador }}">Atualizar</button>
+
+                    <form method="POST" action="{% url 'pessoas' %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="acao" value="remover_colaborador">
                         <input type="hidden" name="cpf" value="{{ colaborador.cpf }}">
